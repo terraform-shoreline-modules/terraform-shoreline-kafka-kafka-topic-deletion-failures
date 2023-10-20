@@ -1,0 +1,146 @@
+{
+  "name": "kafka_topic_deletion_failures",
+  "description": "Kafka Topic Deletion Failures refer to situations where attempts to delete topics in the Kafka messaging system result in errors or failures. This can occur due to a variety of reasons, including configuration issues, permissions problems, or other system errors. When these failures occur, it can impact the overall performance and functionality of the Kafka system, potentially leading to data loss or other issues.",
+  "params": [
+    {
+      "name": "PATH_TO_KAFKA",
+      "value": ""
+    },
+    {
+      "name": "PORT",
+      "value": ""
+    },
+    {
+      "name": "TOPIC_NAME",
+      "value": ""
+    },
+    {
+      "name": "ZOOKEEPER_SERVER",
+      "value": ""
+    },
+    {
+      "name": "KAFKA_SERVER",
+      "value": ""
+    },
+    {
+      "name": "GROUP_NAME",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Kafka Topic Deletion Failures.\nKafka Topic Deletion Failures refer to situations where attempts to delete topics in the Kafka messaging system result in errors or failures. This can occur due to a variety of reasons, including configuration issues, permissions problems, or other system errors. When these failures occur, it can impact the overall performance and functionality of the Kafka system, potentially leading to data loss or other issues."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the status of the Kafka broker"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `systemctl status kafka`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the topic exists"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `${PATH_TO_KAFKA}/bin/kafka-topics.sh --zookeeper ${ZOOKEEPER_SERVER}:${PORT} --describe --topic ${TOPIC_NAME}`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the topic has any partitions"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `${PATH_TO_KAFKA}/bin/kafka-topics.sh --zookeeper ${ZOOKEEPER_SERVER}:${PORT} --describe --topic ${TOPIC_NAME} | grep \"PartitionCount\"`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any active consumers for the topic"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `${PATH_TO_KAFKA}/bin/kafka-consumer-groups.sh --bootstrap-server ${KAFKA_SERVER}:${PORT} --describe --group ${GROUP_NAME}`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any active producers for the topic"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `${PATH_TO_KAFKA}/bin/kafka-console-producer.sh --broker-list ${KAFKA_SERVER}:${PORT} --topic ${TOPIC_NAME}`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the logs for any errors related to the topic deletion"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `tail -f ${PATH_TO_KAFKA}/logs/server.log | grep \"Error deleting topic\"`"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Verify if the topic is configured with retention policy and if it is, disable it."
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_disable_topic_retention($TOPIC_NAME)"
+    },
+    {
+      "name": "cell_16",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any active consumers or producers for the Kafka topic and stop them."
+    },
+    {
+      "name": "cell_17",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_stop_kafka_consumers_producers($PORT, $TOPIC_NAME, $KAFKA_SERVER)"
+    }
+  ]
+}
